@@ -4,75 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Duelo no Velho Oeste!</title>
-    
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
-    
-    <style>
-        body {
-            /* Carregando nossa imagem de fundo */
-            background-image: url("{{ url_for('static', filename='img/background.png') }}");
-            background-size: cover; /* Faz a imagem cobrir toda a tela */
-            background-position: center; /* Centraliza a imagem */
-            background-repeat: no-repeat;
-            
-            /* Usando a nova fonte */
-            font-family: 'Rye', cursive;
-            
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding-top: 20px;
-            height: 100vh;
-            overflow: hidden; /* Evita barras de rolagem */
-        }
-
-        #game-info {
-            font-size: 1.8em;
-            color: #fff;
-            background-color: rgba(0, 0, 0, 0.5); /* Fundo preto semi-transparente */
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: 2px solid #d2b48c; /* Cor de areia */
-            text-shadow: 2px 2px 4px #000; /* Sombra no texto para legibilidade */
-        }
-
-        canvas {
-            border: 4px solid #8b4513; /* Borda marrom, como madeira */
-            margin-top: 15px;
-            border-radius: 5px;
-            background-color: rgba(255, 255, 255, 0.2); /* Fundo do canvas levemente transparente */
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 15px 30px;
-            font-family: 'Rye', cursive; /* Usando a mesma fonte */
-            font-size: 1.2em;
-            cursor: pointer;
-            color: white;
-            background-color: #cd853f; /* Cor de couro */
-            border: 2px solid #8b4513;
-            border-radius: 5px;
-            text-shadow: 1px 1px 2px #000;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-        }
-        button:hover {
-            background-color: #d2b48c;
-        }
-    </style>
 </head>
 <body>
-    <div id="game-info">
-        <span>Recompensa: <span id="score">0</span>$</span>
-        <span style="margin-left: 20px;">Tempo: <span id="timer">10</span>s</span>
+    <div class="main-container">
+        <div id="game-section">
+            <div id="game-info">
+                <span>Recompensa: <span id="score">0</span>$</span>
+                <span style="margin-left: 20px;">Tempo: <span id="timer">10</span>s</span>
+            </div>
+            
+            <canvas id="gameCanvas"></canvas>
+            
+            <button id="startButton">Começar o Duelo!</button>
+        </div>
+
+        <div id="leaderboard-section">
+            <h2>Top Pistoleiros</h2>
+            <ol id="leaderboard-list"></ol>
+        </div>
     </div>
-    
-    <canvas id="gameCanvas" width="350" height="450"></canvas>
-    
-    <button id="startButton">Começar o Duelo!</button>
+
+    <div id="game-over-modal">
+        <div id="modal-content">
+            <h2>Duelo Encerrado!</h2>
+            <p>Sua recompensa final foi de <strong id="final-score-modal">0</strong>$.</p>
+            <p>O que deseja fazer?</p>
+            <div class="modal-buttons">
+                <button id="play-again-button">Jogar Novamente</button>
+                <button id="show-register-form-button">Registrar Pontuação</button>
+            </div>
+            <div id="register-form" style="display: none; margin-top: 20px;">
+                 <input type="text" id="player-name-input" placeholder="Seu nome de pistoleiro">
+                 <button id="submit-score-button">Confirmar Registro</button>
+            </div>
+        </div>
+    </div>
     
     <script src="{{ url_for('static', filename='js/game.js') }}" defer></script>
 </body>

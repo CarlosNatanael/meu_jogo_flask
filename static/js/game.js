@@ -1,35 +1,82 @@
-// static/js/game.js (ATUALIZADO)
+// static/js/game.js (VERSÃO COMPLETA E CORRIGIDA)
 
 // 1. CONFIGURAÇÃO INICIAL
 const canvas = document.getElementById('gameCanvas');
 const scoreElement = document.getElementById('score');
 const timerElement = document.getElementById('timer');
 const startButton = document.getElementById('startButton');
+const leaderboardList = document.getElementById('leaderboard-list');
 const ctx = canvas.getContext('2d');
 
-// Variáveis do jogo
+// Elementos do modal
+const gameOverModal = document.getElementById('game-over-modal');
+const finalScoreModal = document.getElementById('final-score-modal');
+const registerForm = document.getElementById('register-form');
+const showRegisterFormButton = document.getElementById('show-register-form-button');
+const playerNameInput = document.getElementById('player-name-input');
+const submitScoreButton = document.getElementById('submit-score-button');
+const playAgainButton = document.getElementById('play-again-button');
+
 let score = 0;
 let timeLeft = 10;
 let timerId = null;
 let isGameOver = true;
 
-// Nosso novo alvo temático!
-const target = {
-    x: 0,
-    y: 0,
-    size: 40, // Tamanho do alvo
-    character: '⭐' // Uma estrela de xerife!
-};
+const target = { x: 0, y: 0, size: 40, character: '⭐' };
 
-// 2. FUNÇÕES DO JOGO
+// 2. FUNÇÕES DE COMUNICAÇÃO COM O SERVIDOR
+async function fetchLeaderboard() {
+    try {
+        const response = await fetch('/get-leaderboard');
+        const leaderboardData = await response.json();
+        updateLeaderboardUI(leaderboardData);
+    } catch (error) {
+        console.error('Erro ao buscar o placar:', error);
+    }
+}
 
-/**
- * Desenha o alvo na tela
- */
+function updateLeaderboardUI(leaderboard) {
+    leaderboardList.innerHTML = '';
+    if (leaderboard.length === 0) {
+        leaderboardList.innerHTML = '<li>Nenhum pistoleiro no placar ainda!</li>';
+        return;
+    }
+    leaderboard.forEach((player, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `${index + 1}. ${player.name} <span class="score">${player.score}$</span>`;
+        leaderboardList.appendChild(li);
+    });
+}
+
+async function submitScore(playerName, finalScore) {
+    try {
+        await fetch('/submit-score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: playerName, score: finalScore })
+        });
+    } catch (error) {
+        console.error('Erro ao enviar a pontuação:', error);
+    }
+}
+
+// 3. FUNÇÕES DO JOGO
+function resizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    if (isGameOver) {
+        // Se o jogo acabou, não redesenha nada para não apagar a mensagem do modal
+    } else {
+        drawTarget();
+    }
+}
+
 function drawTarget() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // A resolução é ajustada aqui para garantir que o desenho seja nítido
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    
     if (!isGameOver) {
-        // Para desenhar texto (incluindo emojis), usamos estas propriedades
         ctx.font = `${target.size}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -37,47 +84,17 @@ function drawTarget() {
     }
 }
 
-/**
- * Mostra a mensagem de "Fim de Jogo" temática
- */
-function drawGameOver() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#8b4513'; // Cor marrom escuro
-    ctx.textAlign = 'center';
-    
-    // Usando a mesma fonte do site
-    ctx.font = `bold 30px Rye, cursive`;
-    ctx.fillText('Duelo encerrado!', canvas.width / 2, canvas.height / 2 - 20);
-    
-    ctx.font = `bold 24px Rye, cursive`;
-    ctx.fillText(`Recompensa: ${score}$`, canvas.width / 2, canvas.height / 2 + 20);
-}
-
-/**
- * Move o alvo para uma posição aleatória
- */
 function moveTarget() {
-    // Ajusta a posição para que o centro do emoji fique dentro do canvas
     target.x = target.size / 2 + Math.random() * (canvas.width - target.size);
     target.y = target.size / 2 + Math.random() * (canvas.height - target.size);
 }
 
-/**
- * Função chamada quando o jogador clica/toca no canvas
- */
 function handleCanvasClick(event) {
     if (isGameOver) return;
-
     const rect = canvas.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
-
-    // Calcula a distância do clique ao centro do alvo
-    const distance = Math.sqrt(
-        Math.pow(clickX - target.x, 2) + Math.pow(clickY - target.y, 2)
-    );
-
-    // Se a distância for menor que metade do tamanho do alvo, acertou!
+    const distance = Math.sqrt(Math.pow(clickX - target.x, 2) + Math.pow(clickY - target.y, 2));
     if (distance < target.size / 2) {
         score++;
         scoreElement.textContent = score;
@@ -86,24 +103,27 @@ function handleCanvasClick(event) {
     }
 }
 
-/**
- * Inicia um novo jogo
- */
+function endGame() {
+    clearInterval(timerId);
+    isGameOver = true;
+    startButton.disabled = false;
+    finalScoreModal.textContent = score;
+    registerForm.style.display = 'none';
+    gameOverModal.style.display = 'flex';
+}
+
 function startGame() {
     isGameOver = false;
     score = 0;
     timeLeft = 10;
     scoreElement.textContent = score;
     timerElement.textContent = timeLeft;
-    startButton.textContent = 'Atire!';
+    startButton.disabled = true;
 
     clearInterval(timerId);
     timerId = setInterval(() => {
         if (timeLeft <= 0) {
-            clearInterval(timerId);
-            isGameOver = true;
-            startButton.textContent = 'Jogar Novamente';
-            drawGameOver();
+            endGame();
         } else {
             timeLeft--;
             timerElement.textContent = timeLeft;
@@ -114,6 +134,28 @@ function startGame() {
     drawTarget();
 }
 
-// 3. INICIALIZAÇÃO
+// 4. INICIALIZAÇÃO E EVENTOS
 startButton.addEventListener('click', startGame);
 canvas.addEventListener('click', handleCanvasClick);
+
+playAgainButton.addEventListener('click', () => {
+    gameOverModal.style.display = 'none';
+    startGame();
+});
+
+showRegisterFormButton.addEventListener('click', () => {
+    registerForm.style.display = 'block';
+});
+
+submitScoreButton.addEventListener('click', async () => {
+    const playerName = playerNameInput.value || 'Anônimo';
+    await submitScore(playerName, score);
+    await fetchLeaderboard();
+    playerNameInput.value = '';
+    gameOverModal.style.display = 'none';
+});
+
+window.addEventListener('resize', resizeCanvas);
+
+fetchLeaderboard();
+resizeCanvas();
