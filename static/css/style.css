@@ -114,6 +114,10 @@ canvas {
     border-color: #333;
 }
 
+.mode-button:hover, #back-to-menu-button:hover {
+    background-color: #d2b48c;
+}
+
 /* --- (Resto dos estilos do Modal, Leaderboard, etc., continuam os mesmos) --- */
 #modal-content { background-color: #8b4513; padding: 30px; border-radius: 10px; border: 4px solid #d2b48c; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 #modal-content h2 { margin: 0 0 15px 0; }
