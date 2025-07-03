@@ -81,7 +81,7 @@ def get_leaderboard():
     conn.close()
     return jsonify(leaderboard)
 
-# --- INICIALIZAÇÃO DO SERVIDOR (continua igual) ---
+# --- INICIALIZAÇÃO DO SERVIDOR ---
 
 if __name__ == '__main__':
     init_db()
