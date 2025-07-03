@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO DO BANCO DE DADOS (continua igual) ---
+# --- CONFIGURAÇÃO DO BANCO DE DADOS ---
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -51,20 +51,20 @@ def submit_score():
     # 2. DECIDE SE INSERE UM NOVO JOGADOR OU ATUALIZA O PLACAR
     if existing_player is None:
         # Jogador é novo, insere o placar normalmente
-        print(f"Jogador novo '{name}' encontrado. Inserindo pontuação: {new_score}")
+        print(f"\nJogador novo '{name}' encontrado. Inserindo pontuação: {new_score}\n")
         cursor.execute("INSERT INTO leaderboard (name, score) VALUES (?, ?)", (name, new_score))
     else:
         # Jogador já existe, compara a pontuação
         existing_score = existing_player['score']
-        print(f"Jogador '{name}' já existe com pontuação {existing_score}. Nova pontuação: {new_score}")
+        print(f"\nJogador '{name}' já existe com pontuação {existing_score}. Nova pontuação: {new_score}")
         
         if new_score > existing_score:
             # Nova pontuação é maior, atualiza o placar
-            print(f"Nova pontuação é MAIOR. Atualizando o placar de '{name}'.")
+            print(f"Nova pontuação é MAIOR. Atualizando o placar de '{name}'.\n")
             cursor.execute("UPDATE leaderboard SET score = ? WHERE name = ?", (new_score, name))
         else:
             # Nova pontuação não é maior, não faz nada
-            print(f"Nova pontuação NÃO é maior. Nenhuma alteração necessária.")
+            print(f"Nova pontuação NÃO é maior. Nenhuma alteração necessária.\n")
 
     conn.commit()
     conn.close()
