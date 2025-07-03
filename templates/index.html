@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Duelo no Velho Oeste!</title>
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Duelo no Velho Oeste - Menu</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="main-container">
-        <div id="game-section">
-            <div id="game-info">
-                <span>Recompensa: <span id="score">0</span>$</span>
-                <span style="margin-left: 20px;">Tempo: <span id="timer">10</span>s</span>
+        <div id="main-menu">
+            <h1>Duelo no Velho Oeste</h1>
+            <div id="game-modes">
+                <button class="mode-button" data-mode="classico">Modo Clássico</button>
+                <button class="mode-button" data-mode="sobrevivencia">Modo Sobrevivência</button>
+                <button class="mode-button" data-mode="precisao">Modo Precisão</button>
             </div>
-            
-            <canvas id="gameCanvas"></canvas>
-            
-            <button id="startButton">Começar o Duelo!</button>
         </div>
 
-        <div id="leaderboard-section">
+        <div id="game-section" style="display: none;">
+            <div id="game-info"></div>
+            <canvas id="gameCanvas"></canvas>
+            <button id="back-to-menu-button">Voltar ao Menu</button>
+        </div>
+
+        <div id="leaderboard-section" style="display: none;">
             <h2>Top Pistoleiros</h2>
             <ol id="leaderboard-list"></ol>
         </div>
@@ -31,20 +36,20 @@
 
     <div id="game-over-modal">
         <div id="modal-content">
-            <h2>Duelo Encerrado!</h2>
-            <p>Sua recompensa final foi de <strong id="final-score-modal">0</strong>$.</p>
+            <h2 id="modal-title">Duelo Encerrado!</h2>
+            <p id="modal-text">Sua recompensa final foi de <strong id="final-score-modal">0</strong>$.</p>
             <p>O que deseja fazer?</p>
             <div class="modal-buttons">
                 <button id="play-again-button">Jogar Novamente</button>
                 <button id="show-register-form-button">Registrar Pontuação</button>
             </div>
             <div id="register-form" style="display: none; margin-top: 20px;">
-                 <input type="text" id="player-name-input" placeholder="Seu nome de pistoleiro">
-                 <button id="submit-score-button">Confirmar Registro</button>
+                <input type="text" id="player-name-input" placeholder="Seu nome de pistoleiro">
+                <button id="submit-score-button">Confirmar Registro</button>
             </div>
         </div>
     </div>
-    
+
     <script src="{{ url_for('static', filename='js/game.js') }}" defer></script>
 </body>
 </html>
