@@ -2,8 +2,8 @@
 
 Bem-vindo ao "Duelo no Velho Oeste", um jogo de arcade e reação para navegador onde sua velocidade e estratégia são postas à prova! Desafie seus reflexos em diferentes modos de jogo, suba nos placares online e torne-se o pistoleiro mais rápido do oeste.
 
-![Imagem do Jogo](https://i.imgur.com/your-image-url.png) 
-*Substitua pelo URL de uma imagem do seu jogo, se desejar.*
+![imagem do jogo](https://github.com/user-attachments/assets/3446e46a-32ae-44dd-9f96-87ff95beaa37)
+
 
 ---
 
@@ -14,7 +14,7 @@ Para rodar o jogo em sua máquina local, siga estes passos:
 1.  **Clone o repositório:**
     ```bash
     git clone https://github.com/CarlosNatanael/meu_jogo_flask.git
-    cd seu-repositorio
+    cd meu_jogo_flask
     ```
 
 2.  **Instale as dependências:**
