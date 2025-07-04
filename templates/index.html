@@ -19,6 +19,7 @@
                 <button class="mode-button" data-mode="classico">Modo Clássico</button>
                 <button class="mode-button" data-mode="sobrevivencia">Modo Sobrevivência</button>
                 <button class="mode-button" data-mode="precisao">Modo Precisão</button>
+                <button id="rules-button" class="mode-button">Regras</button>
             </div>
         </div>
 
@@ -36,6 +37,35 @@
         <div id="leaderboard-section" style="display: none;">
             <h2>Top Pistoleiros</h2>
             <ol id="leaderboard-list"></ol>
+        </div>
+    </div>
+
+    <!-- Modal de Regras -->
+    <div id="rules-modal">
+        <div id="rules-content">
+            <h2>Regras do Duelo</h2>
+            <div class="rules-text">
+                <h3>Objetivo</h3>
+                <p>Clique nos alvos que aparecem na tela para marcar pontos. Cada modo de jogo tem um desafio diferente!</p>
+                
+                <h3>Modos de Jogo</h3>
+                <ul>
+                    <li><strong>Clássico:</strong> Marque o máximo de pontos em 10 segundos. Apenas neste modo sua pontuação vai para o placar!</li>
+                    <li><strong>Sobrevivência:</strong> Comece com 3 vidas. O jogo acaba quando suas vidas chegarem a zero. Cuidado com as caveiras!</li>
+                    <li><strong>Precisão:</strong> Você tem apenas 15 balas. Cada clique conta!</li>
+                </ul>
+
+                <h3>Itens</h3>
+                <ul>
+                    <li>⭐ <strong>Estrela Normal:</strong> Vale 1 ponto.</li>
+                    <li>🌟 <strong>Estrela Dourada:</strong> Rara e rápida, vale 5 pontos.</li>
+                    <li>💀 <strong>Caveira:</strong> Clicar nela no modo Sobrevivência custa uma vida.</li>
+                    <li>💣 <strong>Bomba:</strong> No modo Sobrevivência, explode todos os alvos. CUIDADO: se explodir uma caveira, você perde uma vida!</li>
+                    <li>⏱️ <strong>Relógio:</strong> Adiciona 3 segundos no modo Clássico.</li>
+                    <li>💰 <strong>Multiplicador:</strong> Dobra seus pontos temporariamente.</li>
+                </ul>
+            </div>
+            <button id="close-rules-button">Fechar</button>
         </div>
     </div>
 

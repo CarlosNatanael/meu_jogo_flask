@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const playAgainButton = document.getElementById('play-again-button');
     const playAgainFromRegisterButton = document.getElementById('play-again-from-register-button');
 
+    // Modal de Regras
+    const rulesButton = document.getElementById('rules-button');
+    const rulesModal = document.getElementById('rules-modal');
+    const closeRulesButton = document.getElementById('close-rules-button');
+
     // --- ESTADO GLOBAL DO JOGO ---
     let gameState = {};
     let gameLoopId = null;
@@ -113,10 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateGameInfo();
         }
 
-        // --- LÓGICA DE SPAWN ALEATÓRIO (MODIFICADA) ---
-        // Define o intervalo padrão para surgimento de itens.
         let spawnInterval = 2.5;
-        // Se estiver no modo sobrevivência e com mais de 100 pontos, o intervalo diminui (mais rápido).
         if (gameState.mode === 'sobrevivencia' && gameState.score > 100) {
             spawnInterval = 1.8; 
         }
@@ -129,15 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (rand < 0.4) spawnEntity('powerup_clock');
                 else if (rand < 0.7) spawnEntity('powerup_2x');
             } else if (gameState.mode === 'sobrevivencia') {
-                // Se tiver mais de 100 pontos, a lógica de perigo é ativada.
                 if (gameState.score > 100) {
-                    if (rand < 0.8) { // 80% de chance de caveira e bomba aparecerem juntas.
+                    if (rand < 0.8) {
                         spawnSkullAndBomb();
-                    } else { // 20% de chance de um multiplicador para variar.
+                    } else {
                         spawnEntity('powerup_2x');
                     }
                 } else {
-                    // Lógica padrão antes dos 100 pontos.
                     if (rand < 0.3) spawnEntity('powerup_bomb');
                     else if (rand < 0.6) spawnEntity('powerup_2x');
                     else spawnEntity('target_skull');
@@ -154,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeEntities.splice(i, 1);
                 continue;
             }
-            // Faz o item piscar quando estiver perto de sumir
             ctx.globalAlpha = (entity.life < 0.5 && Math.floor(entity.life * 10) % 2 === 0) ? 0.5 : 1.0;
 
             ctx.font = `${entity.size}px Arial`;
@@ -207,24 +206,20 @@ document.addEventListener('DOMContentLoaded', () => {
         activeEntities.push(entity);
     }
     
-    // --- NOVA FUNÇÃO PARA SPAWNAR CAVEIRA E BOMBA JUNTAS ---
     function spawnSkullAndBomb() {
-        if (activeEntities.length > 6) return; // Garante que não sobrecarregue a tela
+        if (activeEntities.length > 6) return;
 
-        // Cria a caveira em uma posição aleatória
         const skull = { type: 'target_skull', x: 0, y: 0, size: 40, life: 2.5, character: '💀' };
         skull.x = skull.size / 2 + Math.random() * (canvas.width - skull.size);
         skull.y = skull.size / 2 + Math.random() * (canvas.height - skull.size);
         activeEntities.push(skull);
 
-        // Cria a bomba perto da caveira
         const bomb = { type: 'powerup_bomb', x: 0, y: 0, size: 35, life: 4.0, character: '💣' };
-        const angle = Math.random() * 2 * Math.PI; // Ângulo aleatório
-        const distance = 60; // Distância da caveira
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = 60;
         bomb.x = skull.x + distance * Math.cos(angle);
         bomb.y = skull.y + distance * Math.sin(angle);
 
-        // Garante que a bomba não saia da tela
         bomb.x = Math.max(bomb.size / 2, Math.min(canvas.width - bomb.size / 2, bomb.x));
         bomb.y = Math.max(bomb.size / 2, Math.min(canvas.height - bomb.size / 2, bomb.y));
         activeEntities.push(bomb);
@@ -246,21 +241,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const distance = Math.sqrt(Math.pow(clickX - entity.x, 2) + Math.pow(clickY - entity.y, 2));
 
             if (distance < entity.size / 2) {
-                 // --- LÓGICA DA BOMBA (MODIFICADA) ---
                 if (entity.type === 'powerup_bomb' && gameState.mode === 'sobrevivencia') {
-                    activeEntities.splice(i, 1); // Remove a bomba clicada
+                    activeEntities.splice(i, 1);
 
-                    // Itera sobre todos os outros itens para "explodi-los"
                     for (let j = activeEntities.length - 1; j >= 0; j--) {
                         const currentEntity = activeEntities[j];
-                        // A explosão afeta apenas alvos e caveiras
                         if (currentEntity.type.includes('target')) {
                             if (currentEntity.type === 'target_skull') {
-                                gameState.lives--; // Perde vida para cada caveira explodida!
+                                gameState.lives--;
                             } else {
-                                gameState.score++; // Ganha pontos para outros alvos
+                                gameState.score++;
                             }
-                            activeEntities.splice(j, 1); // Remove o item explodido
+                            activeEntities.splice(j, 1);
                         }
                     }
                     
@@ -268,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         endGame("A explosão da bomba te pegou!");
                     }
                     updateGameInfo();
-                    return; // Sai da função, pois a bomba já foi processada
+                    return;
                 }
                 
                 if (entity.type === 'target_skull') {
@@ -308,11 +300,33 @@ document.addEventListener('DOMContentLoaded', () => {
     showMenu();
     fetchLeaderboard();
     resizeCanvas();
-    document.querySelectorAll('.mode-button').forEach(b => b.addEventListener('click', () => setupGame(b.dataset.mode)));
+    
+    // CORREÇÃO: Adiciona o listener APENAS para os botões que têm o atributo 'data-mode'
+    document.querySelectorAll('.mode-button[data-mode]').forEach(b => {
+        b.addEventListener('click', () => setupGame(b.dataset.mode));
+    });
+
+    // Listeners para os outros botões
     startGameButton.addEventListener('click', runGame);
     canvas.addEventListener('click', handleCanvasClick);
     window.addEventListener('resize', resizeCanvas);
     backToMenuButton.addEventListener('click', showMenu);
+    
+    // Eventos do Modal de Regras
+    rulesButton.addEventListener('click', () => {
+        rulesModal.style.display = 'flex';
+    });
+
+    closeRulesButton.addEventListener('click', () => {
+        rulesModal.style.display = 'none';
+    });
+
+    // Fecha o modal se o usuário clicar fora da área de conteúdo
+    window.addEventListener('click', (event) => {
+        if (event.target == rulesModal) {
+            rulesModal.style.display = 'none';
+        }
+    });
     
     playAgainButton.addEventListener('click', () => {
         gameOverModal.style.display = 'none';

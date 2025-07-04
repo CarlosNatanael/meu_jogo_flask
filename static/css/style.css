@@ -16,6 +16,7 @@ body {
     min-height: 100vh;
     margin: 0;
     overflow-y: auto;
+    padding-bottom: 60px; /* Espaço para o footer */
 }
 
 .main-container {
@@ -126,7 +127,7 @@ button {
 
 #game-over-modal {
     display: none;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -137,6 +138,7 @@ button {
     flex-direction: column;
     color: white;
     text-align: center;
+    z-index: 100;
 }
 
 #leaderboard-list {
@@ -163,6 +165,7 @@ button {
 @media (max-width: 768px) {
     body {
         padding: 10px; /* Menos padding em telas pequenas */
+        padding-bottom: 60px; /* Espaço para o footer */
     }
 
     .main-container {
@@ -180,13 +183,82 @@ button {
         font-size: 1.2em; /* Diminui a fonte no celular */
     }
 
-    #modal-content {
+    #modal-content, #rules-content {
         width: 90%; /* O modal não ocupa a tela inteira */
     }
 }
 
+/* --- ESTILOS DO MODAL DE REGRAS --- */
+#rules-modal {
+    display: none; /* Começa escondido */
+    position: fixed; /* Fica fixo na tela */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 100; /* Garante que fique sobre tudo */
+}
+
+#rules-content {
+    background-color: #8b4513;
+    padding: 20px 30px;
+    border-radius: 10px;
+    border: 4px solid #d2b48c;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    color: white;
+    text-align: left;
+    max-width: 90%;
+    width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#rules-content h2 {
+    text-align: center;
+    margin-top: 0;
+}
+
+.rules-text h3 {
+    border-bottom: 1px solid #d2b48c;
+    padding-bottom: 5px;
+    margin-top: 20px;
+}
+
+.rules-text ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.rules-text li {
+    margin-bottom: 10px;
+}
+
+#close-rules-button {
+    display: block;
+    margin: 20px auto 0 auto; /* Centraliza o botão */
+}
+
+/* --- ESTILO DO FOOTER --- */
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    color: white;
+    font-size: 0.9em;
+    text-shadow: 1px 1px 2px #000;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+}
+
+
 /* Aplica o estilo base a todos os nossos botões de ação */
-.mode-button, #start-game-button, #back-to-menu-button {
+.mode-button, #start-game-button, #back-to-menu-button, #close-rules-button {
     padding: 15px 30px;
     font-family: 'Rye', cursive;
     font-size: 1.2em;
@@ -198,6 +270,6 @@ button {
 }
 
 /* Aplica o efeito hover a todos eles */
-.mode-button:hover, #start-game-button:hover, #back-to-menu-button:hover {
+.mode-button:hover, #start-game-button:hover, #back-to-menu-button:hover, #close-rules-button:hover {
     background-color: #d2b48c;
 }
