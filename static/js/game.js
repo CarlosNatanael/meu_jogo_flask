@@ -1,5 +1,3 @@
-// static/js/game.js (VERSÃO FINAL E CORRIGIDA)
-
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
@@ -17,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Modal de Fim de Jogo
     const gameOverModal = document.getElementById('game-over-modal');
-    const finalScoreModal = document.getElementById('final-score-modal');
     const modalTitle = document.getElementById('modal-title');
     const modalText = document.getElementById('modal-text');
     const initialModalButtons = document.getElementById('initial-modal-buttons');
@@ -31,19 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO GLOBAL DO JOGO ---
     let gameState = {};
     let gameLoopId = null;
-    const sprites = {};
     let activeEntities = [];
-
-    // --- CARREGAMENTO DE SPRITES ---
-    function loadSprites(sources, callback) {
-        let loaded = 0;
-        const numImages = Object.keys(sources).length;
-        for (const name in sources) {
-            sprites[name] = new Image();
-            sprites[name].onload = () => { if (++loaded >= numImages) callback(); };
-            sprites[name].src = sources[name];
-        }
-    }
 
     // --- LÓGICA DE UI (INTERFACE) ---
     function showMenu() {
@@ -59,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState.mode === 'classico') {
             infoHTML += `<span style="margin-left:20px;">Tempo: <span id="timer">${gameState.timeLeft}</span>s</span>`;
         } else if (gameState.mode === 'sobrevivencia') {
-            infoHTML += `<span style="margin-left:20px;">Vidas: <span id="lives">${'❤️'.repeat(gameState.lives)}</span></span>`;
+            infoHTML += `<span style="margin-left:20px;">Vidas: <span id="lives">${'❤️'.repeat(Math.max(0, gameState.lives))}</span></span>`;
         } else if (gameState.mode === 'precisao') {
             infoHTML += `<span style="margin-left:20px;">Balas: <span id="bullets">${gameState.bullets}</span></span>`;
         }
@@ -73,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupGame(mode) {
         mainMenu.style.display = 'none';
         gameSection.style.display = 'flex';
-        leaderboardSection.style.display = (mode === 'classico');
+        leaderboardSection.style.display = (mode === 'classico' ? 'block' : 'none');
         startGameButton.style.display = 'block';
 
         gameState = {
@@ -82,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         activeEntities = [];
         
-        // CORREÇÃO: Redimensiona o canvas DEPOIS que ele fica visível
         resizeCanvas();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -99,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startGameButton.style.display = 'none';
         lastTime = performance.now();
         
-        // Começa com uma estrela
         spawnEntity('target_normal'); 
         
         gameLoop();
@@ -116,49 +99,64 @@ document.addEventListener('DOMContentLoaded', () => {
         const deltaTime = (timestamp - lastTime) / 1000;
         lastTime = timestamp;
 
-        // --- LÓGICA DE 1 SEGUNDO (CORRIGIDA) ---
         secondCounter += deltaTime;
         if (secondCounter >= 1) {
             secondCounter -= 1;
             if (gameState.mode === 'classico') {
                 gameState.timeLeft--;
-                if (gameState.timeLeft < 0) gameState.timeLeft = 0;
-                if (gameState.timeLeft === 0) endGame("O tempo acabou!");
+                if (gameState.timeLeft <= 0) endGame("O tempo acabou!");
             }
             if (gameState.scoreMultiplier > 1) {
                 gameState.multiplierTimeLeft--;
                 if (gameState.multiplierTimeLeft <= 0) gameState.scoreMultiplier = 1;
             }
-            updateGameInfo(); // Atualiza a UI a cada segundo
+            updateGameInfo();
         }
 
-        // --- LÓGICA DE SPAWN ALEATÓRIO ---
+        // --- LÓGICA DE SPAWN ALEATÓRIO (MODIFICADA) ---
+        // Define o intervalo padrão para surgimento de itens.
+        let spawnInterval = 2.5;
+        // Se estiver no modo sobrevivência e com mais de 100 pontos, o intervalo diminui (mais rápido).
+        if (gameState.mode === 'sobrevivencia' && gameState.score > 100) {
+            spawnInterval = 1.8; 
+        }
+
         randomSpawnCounter += deltaTime;
-        if (randomSpawnCounter >= 2.5) {
+        if (randomSpawnCounter >= spawnInterval) {
             randomSpawnCounter = 0;
             const rand = Math.random();
             if (gameState.mode === 'classico') {
                 if (rand < 0.4) spawnEntity('powerup_clock');
                 else if (rand < 0.7) spawnEntity('powerup_2x');
             } else if (gameState.mode === 'sobrevivencia') {
-                if (rand < 0.3) spawnEntity('powerup_bomb');
-                else if (rand < 0.6) spawnEntity('powerup_2x');
-                else spawnEntity('target_skull');
+                // Se tiver mais de 100 pontos, a lógica de perigo é ativada.
+                if (gameState.score > 100) {
+                    if (rand < 0.8) { // 80% de chance de caveira e bomba aparecerem juntas.
+                        spawnSkullAndBomb();
+                    } else { // 20% de chance de um multiplicador para variar.
+                        spawnEntity('powerup_2x');
+                    }
+                } else {
+                    // Lógica padrão antes dos 100 pontos.
+                    if (rand < 0.3) spawnEntity('powerup_bomb');
+                    else if (rand < 0.6) spawnEntity('powerup_2x');
+                    else spawnEntity('target_skull');
+                }
             }
         }
         
-        // --- DESENHO E ATUALIZAÇÃO DE ENTIDADES ---
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let i = activeEntities.length - 1; i >= 0; i--) {
             const entity = activeEntities[i];
             
-            if (entity.life > 0) {
-                entity.life -= deltaTime;
-                ctx.globalAlpha = Math.min(1, entity.life / 0.3);
-            } else { 
+            entity.life -= deltaTime;
+            if (entity.life <= 0) { 
                 activeEntities.splice(i, 1);
                 continue;
             }
+            // Faz o item piscar quando estiver perto de sumir
+            ctx.globalAlpha = (entity.life < 0.5 && Math.floor(entity.life * 10) % 2 === 0) ? 0.5 : 1.0;
+
             ctx.font = `${entity.size}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -166,9 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.globalAlpha = 1.0;
         }
 
-        // --- LÓGICA DE SPAWN DE ESTRELAS (UM DE CADA VEZ) ---
         const targetCount = activeEntities.filter(e => e.type.includes('target') && e.type !== 'target_skull').length;
-        if (targetCount === 0) {
+        if (targetCount === 0 && !gameState.isGameOver) {
             if (gameState.mode === 'precisao' && gameState.bullets > 0) {
                 spawnEntity('target_normal');
             } else if (gameState.mode !== 'precisao') {
@@ -185,11 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitle.textContent = "Duelo Encerrado!";
         modalText.innerHTML = `Sua recompensa final foi de <strong>${gameState.score}</strong>$.<br><em>(${reason})</em>`;
         
-        // Garante que o estado inicial do modal esteja correto
-        initialModalButtons.style.display = 'flex'; // Mostra "Jogar Novamente" / "Registrar"
-        registerForm.style.display = 'none';      // Esconde o formulário de nome
+        initialModalButtons.style.display = 'flex';
+        registerForm.style.display = 'none';
 
-        // Só mostra a opção de registrar se for o modo clássico
         showRegisterFormButton.style.display = gameState.mode === 'classico' ? 'inline-block' : 'none';
         
         gameOverModal.style.display = 'flex';
@@ -197,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function spawnEntity(type) {
         if (activeEntities.length > 7) return;
-        const entity = { type: type, x: 0, y: 0, size: 40, life: 3.0, initialLife: 3.0, character: '❓' };
+        const entity = { type: type, x: 0, y: 0, size: 40, life: 3.0, character: '❓' };
         const configs = {
             'target_normal': { character: '⭐', life: 1.8 },
             'target_gold': { character: '🌟', size: 35, life: 1.2 },
@@ -210,6 +205,29 @@ document.addEventListener('DOMContentLoaded', () => {
         entity.x = entity.size / 2 + Math.random() * (canvas.width - entity.size);
         entity.y = entity.size / 2 + Math.random() * (canvas.height - entity.size);
         activeEntities.push(entity);
+    }
+    
+    // --- NOVA FUNÇÃO PARA SPAWNAR CAVEIRA E BOMBA JUNTAS ---
+    function spawnSkullAndBomb() {
+        if (activeEntities.length > 6) return; // Garante que não sobrecarregue a tela
+
+        // Cria a caveira em uma posição aleatória
+        const skull = { type: 'target_skull', x: 0, y: 0, size: 40, life: 2.5, character: '💀' };
+        skull.x = skull.size / 2 + Math.random() * (canvas.width - skull.size);
+        skull.y = skull.size / 2 + Math.random() * (canvas.height - skull.size);
+        activeEntities.push(skull);
+
+        // Cria a bomba perto da caveira
+        const bomb = { type: 'powerup_bomb', x: 0, y: 0, size: 35, life: 4.0, character: '💣' };
+        const angle = Math.random() * 2 * Math.PI; // Ângulo aleatório
+        const distance = 60; // Distância da caveira
+        bomb.x = skull.x + distance * Math.cos(angle);
+        bomb.y = skull.y + distance * Math.sin(angle);
+
+        // Garante que a bomba não saia da tela
+        bomb.x = Math.max(bomb.size / 2, Math.min(canvas.width - bomb.size / 2, bomb.x));
+        bomb.y = Math.max(bomb.size / 2, Math.min(canvas.height - bomb.size / 2, bomb.y));
+        activeEntities.push(bomb);
     }
 
     function handleCanvasClick(event) {
@@ -228,6 +246,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const distance = Math.sqrt(Math.pow(clickX - entity.x, 2) + Math.pow(clickY - entity.y, 2));
 
             if (distance < entity.size / 2) {
+                 // --- LÓGICA DA BOMBA (MODIFICADA) ---
+                if (entity.type === 'powerup_bomb' && gameState.mode === 'sobrevivencia') {
+                    activeEntities.splice(i, 1); // Remove a bomba clicada
+
+                    // Itera sobre todos os outros itens para "explodi-los"
+                    for (let j = activeEntities.length - 1; j >= 0; j--) {
+                        const currentEntity = activeEntities[j];
+                        // A explosão afeta apenas alvos e caveiras
+                        if (currentEntity.type.includes('target')) {
+                            if (currentEntity.type === 'target_skull') {
+                                gameState.lives--; // Perde vida para cada caveira explodida!
+                            } else {
+                                gameState.score++; // Ganha pontos para outros alvos
+                            }
+                            activeEntities.splice(j, 1); // Remove o item explodido
+                        }
+                    }
+                    
+                    if (gameState.lives <= 0) {
+                        endGame("A explosão da bomba te pegou!");
+                    }
+                    updateGameInfo();
+                    return; // Sai da função, pois a bomba já foi processada
+                }
+                
                 if (entity.type === 'target_skull') {
                     if (gameState.mode === 'sobrevivencia') {
                         gameState.lives--;
@@ -245,15 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         gameState.scoreMultiplier = (gameState.scoreMultiplier === 1) ? 2 : gameState.scoreMultiplier * 2;
                         gameState.multiplierTimeLeft += 5;
                     } 
-                    else if (entity.type === 'powerup_bomb' && gameState.mode === 'sobrevivencia') {
-                        for (let j = activeEntities.length - 1; j >= 0; j--) {
-                            if (activeEntities[j].type.includes('target')) {
-                                gameState.score++;
-                                activeEntities.splice(j, 1);
-                            }
-                        }
-                    }
                 }
+                
                 activeEntities.splice(i, 1);
                 updateGameInfo();
                 if (gameState.mode === 'precisao' && gameState.bullets <= 0) endGame("Você ficou sem balas!");
@@ -278,20 +314,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', resizeCanvas);
     backToMenuButton.addEventListener('click', showMenu);
     
-    // Evento do botão "Jogar Novamente" principal do modal
     playAgainButton.addEventListener('click', () => {
         gameOverModal.style.display = 'none';
         setupGame(gameState.mode);
     });
     
-    // Evento do segundo botão "Jogar Novamente" (o que aparece com o form)
     playAgainFromRegisterButton.addEventListener('click', () => {
         gameOverModal.style.display = 'none';
         setupGame(gameState.mode);
     });
-    // CORREÇÃO: Lógica do botão "Registrar Pontuação"
     showRegisterFormButton.addEventListener('click', () => {
-        // Esconde os botões iniciais e mostra o formulário
         initialModalButtons.style.display = 'none';
         registerForm.style.display = 'block';
     });
