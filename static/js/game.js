@@ -282,10 +282,40 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function resizeCanvas() { if (canvas) { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; } }
 
-    // --- FUNÇÕES DE API E EVENTOS ---
-    async function fetchLeaderboard() { /* ...código igual ... */ }
-    function updateLeaderboardUI(leaderboard) { /* ...código igual ... */ }
-    async function submitScore(playerName, finalScore) { /* ...código igual ... */ }
+async function fetchLeaderboard() {
+    try {
+        const response = await fetch('/get-leaderboard');
+        const data = await response.json();
+        updateLeaderboardUI(data);
+    } catch (error) {
+        console.error('Erro ao buscar o placar:', error);
+    }
+}
+
+function updateLeaderboardUI(leaderboard) {
+    leaderboardList.innerHTML = '';
+    if (leaderboard.length === 0) {
+        leaderboardList.innerHTML = '<li>Nenhum pistoleiro no placar ainda!</li>';
+        return;
+    }
+    leaderboard.forEach((player, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `${index + 1}. ${player.name} <span class="score">${player.score}$</span>`;
+        leaderboardList.appendChild(li);
+    });
+}
+
+async function submitScore(playerName, finalScore) {
+    try {
+        await fetch('/submit-score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: playerName, score: finalScore })
+        });
+    } catch (error) {
+        console.error('Erro ao enviar a pontuação:', error);
+    }
+}
 
     const sources = {
         target_normal: '/static/img/target_normal.png',
