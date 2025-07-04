@@ -15,16 +15,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const startGameButton = document.getElementById('start-game-button');
     const backToMenuButton = document.getElementById('back-to-menu-button');
     
-    // Modal
+    // Modal de Fim de Jogo
     const gameOverModal = document.getElementById('game-over-modal');
     const finalScoreModal = document.getElementById('final-score-modal');
     const modalTitle = document.getElementById('modal-title');
     const modalText = document.getElementById('modal-text');
+    const initialModalButtons = document.getElementById('initial-modal-buttons');
     const registerForm = document.getElementById('register-form');
     const showRegisterFormButton = document.getElementById('show-register-form-button');
     const playerNameInput = document.getElementById('player-name-input');
     const submitScoreButton = document.getElementById('submit-score-button');
     const playAgainButton = document.getElementById('play-again-button');
+    const playAgainFromRegisterButton = document.getElementById('play-again-from-register-button');
 
     // --- ESTADO GLOBAL DO JOGO ---
     let gameState = {};
@@ -179,11 +181,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState.isGameOver) return;
         gameState.isGameOver = true;
         cancelAnimationFrame(gameLoopId);
+        
         modalTitle.textContent = "Duelo Encerrado!";
         modalText.innerHTML = `Sua recompensa final foi de <strong>${gameState.score}</strong>$.<br><em>(${reason})</em>`;
-        finalScoreModal.textContent = gameState.score;
-        registerForm.style.display = 'none';
+        
+        // Garante que o estado inicial do modal esteja correto
+        initialModalButtons.style.display = 'flex'; // Mostra "Jogar Novamente" / "Registrar"
+        registerForm.style.display = 'none';      // Esconde o formulário de nome
+
+        // Só mostra a opção de registrar se for o modo clássico
         showRegisterFormButton.style.display = gameState.mode === 'classico' ? 'inline-block' : 'none';
+        
         gameOverModal.style.display = 'flex';
     }
     
@@ -269,8 +277,24 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('click', handleCanvasClick);
     window.addEventListener('resize', resizeCanvas);
     backToMenuButton.addEventListener('click', showMenu);
-    playAgainButton.addEventListener('click', () => { gameOverModal.style.display = 'none'; setupGame(gameState.mode); });
-    showRegisterFormButton.addEventListener('click', () => { registerForm.style.display = 'block'; });
+    
+    // Evento do botão "Jogar Novamente" principal do modal
+    playAgainButton.addEventListener('click', () => {
+        gameOverModal.style.display = 'none';
+        setupGame(gameState.mode);
+    });
+    
+    // Evento do segundo botão "Jogar Novamente" (o que aparece com o form)
+    playAgainFromRegisterButton.addEventListener('click', () => {
+        gameOverModal.style.display = 'none';
+        setupGame(gameState.mode);
+    });
+    // CORREÇÃO: Lógica do botão "Registrar Pontuação"
+    showRegisterFormButton.addEventListener('click', () => {
+        // Esconde os botões iniciais e mostra o formulário
+        initialModalButtons.style.display = 'none';
+        registerForm.style.display = 'block';
+    });
     submitScoreButton.addEventListener('click', async () => {
         const name = playerNameInput.value || 'Anônimo';
         await submitScore(name, gameState.score);

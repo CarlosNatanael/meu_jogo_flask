@@ -27,7 +27,8 @@
                 </div>
                  
             <button id="start-game-button">Começar o Duelo</button>    
-            
+            <br>
+
             <canvas id="gameCanvas"></canvas>
             <button id="back-to-menu-button">Voltar ao Menu</button>
         </div>
@@ -41,15 +42,20 @@
     <div id="game-over-modal">
         <div id="modal-content">
             <h2 id="modal-title">Duelo Encerrado!</h2>
-            <p id="modal-text">Sua recompensa final foi de <strong id="final-score-modal">0</strong>$.</p>
+            <p id="modal-text">Sua recompensa final foi de <strong>0</strong>$.</p>
             <p>O que deseja fazer?</p>
-            <div class="modal-buttons">
+
+            <div id="initial-modal-buttons" class="modal-buttons">
                 <button id="play-again-button">Jogar Novamente</button>
                 <button id="show-register-form-button">Registrar Pontuação</button>
             </div>
-            <div id="register-form" style="display: none; margin-top: 20px;">
-                <input type="text" id="player-name-input" placeholder="Seu nome de pistoleiro">
-                <button id="submit-score-button">Confirmar Registro</button>
+
+            <div id="register-form" style="display: none;">
+                 <input type="text" id="player-name-input" placeholder="Seu nome de pistoleiro" style="margin-bottom: 15px;">
+                 <div class="modal-buttons">
+                    <button id="play-again-from-register-button">Jogar Novamente</button>
+                    <button id="submit-score-button">Confirmar Registro</button>
+                 </div>
             </div>
         </div>
     </div>
