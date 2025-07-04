@@ -1,4 +1,3 @@
-/* Uma boa prática que ajuda a evitar problemas de layout com bordas e padding */
 * {
     box-sizing: border-box;
 }
@@ -52,8 +51,8 @@ body {
     gap: 15px;
 }
 
-/* --- ESTILOS DA SEÇÃO DO JOGO --- */
-#game-section, #leaderboard-section {
+/* --- ESTILOS DA SEÇÃO DO JOGO E PLACARES --- */
+#game-section, .leaderboard-container {
     background-color: rgba(0, 0, 0, 0.6);
     padding: 15px;
     border-radius: 10px;
@@ -66,6 +65,13 @@ body {
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
+}
+
+/* CORREÇÃO: Estilo para os contêineres dos placares */
+.leaderboard-container {
+    width: 100%;
+    max-width: 350px;
+    text-align: center;
 }
 
 #game-info {
@@ -98,12 +104,6 @@ button {
     background-color: #cd853f;
     border: 2px solid #8b4513;
     border-radius: 5px;
-}
-
-#leaderboard-section {
-    width: 100%;
-    max-width: 350px;
-    text-align: center;
 }
 
 #modal-content {
@@ -141,21 +141,22 @@ button {
     z-index: 100;
 }
 
-#leaderboard-list {
+/* CORREÇÃO: Estilos genéricos para as listas dos placares */
+.leaderboard-container ol {
     list-style: none;
     padding: 0;
     margin: 0;
     font-size: 1.1em;
     text-align: left;
 }
-#leaderboard-list li {
+.leaderboard-container li {
     padding: 5px;
     border-bottom: 1px dashed #d2b48c;
 }
-#leaderboard-list li:last-child {
+.leaderboard-container li:last-child {
     border-bottom: none;
 }
-#leaderboard-list li .score {
+.leaderboard-container li .score {
     float: right; /* Alinha a pontuação à direita */
     font-weight: bold;
 }
@@ -174,7 +175,7 @@ button {
         gap: 20px; /* Menor espaço entre os itens */
     }
 
-    #game-section, #leaderboard-section {
+    #game-section, .leaderboard-container {
         width: 95%; /* Ocupam quase toda a largura da tela */
         max-width: 400px;
     }

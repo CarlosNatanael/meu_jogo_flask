@@ -5,9 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameSection = document.getElementById('game-section');
     const gameInfo = document.getElementById('game-info');
     const canvas = document.getElementById('gameCanvas');
-    const leaderboardSection = document.getElementById('leaderboard-section');
-    const leaderboardList = document.getElementById('leaderboard-list');
     const ctx = canvas.getContext('2d');
+    
+    // Seletores dos Placares
+    const leaderboardClassicSection = document.getElementById('leaderboard-classic-section');
+    const leaderboardClassicList = document.getElementById('leaderboard-classic-list');
+    const leaderboardSurvivalSection = document.getElementById('leaderboard-survival-section');
+    const leaderboardSurvivalList = document.getElementById('leaderboard-survival-list');
     
     // Botões
     const startGameButton = document.getElementById('start-game-button');
@@ -39,7 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMenu() {
         mainMenu.style.display = 'block';
         gameSection.style.display = 'none';
-        leaderboardSection.style.display = 'block';
+        
+        // CORREÇÃO: Esconde os dois placares no menu principal
+        leaderboardClassicSection.style.display = 'none';
+        leaderboardSurvivalSection.style.display = 'none';
+
         if(gameState) gameState.isGameOver = true;
         cancelAnimationFrame(gameLoopId);
     }
@@ -63,8 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupGame(mode) {
         mainMenu.style.display = 'none';
         gameSection.style.display = 'flex';
-        leaderboardSection.style.display = (mode === 'classico' ? 'block' : 'none');
         startGameButton.style.display = 'block';
+
+        // Mostra o placar correspondente ao modo de jogo
+        leaderboardClassicSection.style.display = (mode === 'classico' ? 'block' : 'none');
+        leaderboardSurvivalSection.style.display = (mode === 'sobrevivencia' ? 'block' : 'none');
 
         gameState = {
             mode: mode, score: 0, isGameOver: true, timeLeft: 0, lives: 0, bullets: 0,
@@ -132,11 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (rand < 0.7) spawnEntity('powerup_2x');
             } else if (gameState.mode === 'sobrevivencia') {
                 if (gameState.score > 100) {
-                    if (rand < 0.8) {
-                        spawnSkullAndBomb();
-                    } else {
-                        spawnEntity('powerup_2x');
-                    }
+                    if (rand < 0.8) spawnSkullAndBomb();
+                    else spawnEntity('powerup_2x');
                 } else {
                     if (rand < 0.3) spawnEntity('powerup_bomb');
                     else if (rand < 0.6) spawnEntity('powerup_2x');
@@ -184,7 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initialModalButtons.style.display = 'flex';
         registerForm.style.display = 'none';
 
-        showRegisterFormButton.style.display = gameState.mode === 'classico' ? 'inline-block' : 'none';
+        // Permite registrar pontuação para os modos Clássico e Sobrevivência
+        showRegisterFormButton.style.display = (gameState.mode === 'classico' || gameState.mode === 'sobrevivencia') ? 'inline-block' : 'none';
         
         gameOverModal.style.display = 'flex';
     }
@@ -247,18 +256,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     for (let j = activeEntities.length - 1; j >= 0; j--) {
                         const currentEntity = activeEntities[j];
                         if (currentEntity.type.includes('target')) {
-                            if (currentEntity.type === 'target_skull') {
-                                gameState.lives--;
-                            } else {
-                                gameState.score++;
-                            }
+                            if (currentEntity.type === 'target_skull') gameState.lives--;
+                            else gameState.score++;
                             activeEntities.splice(j, 1);
                         }
                     }
                     
-                    if (gameState.lives <= 0) {
-                        endGame("A explosão da bomba te pegou!");
-                    }
+                    if (gameState.lives <= 0) endGame("A explosão da bomba te pegou!");
                     updateGameInfo();
                     return;
                 }
@@ -274,9 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     gameState.score += points * gameState.scoreMultiplier;
                 } 
                 else if (entity.type.includes('powerup')) {
-                    if (entity.type === 'powerup_clock' && gameState.mode === 'classico') {
-                        gameState.timeLeft += 3;
-                    } else if (entity.type === 'powerup_2x') { 
+                    if (entity.type === 'powerup_clock' && gameState.mode === 'classico') gameState.timeLeft += 3;
+                    else if (entity.type === 'powerup_2x') { 
                         gameState.scoreMultiplier = (gameState.scoreMultiplier === 1) ? 2 : gameState.scoreMultiplier * 2;
                         gameState.multiplierTimeLeft += 5;
                     } 
@@ -292,41 +295,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function resizeCanvas() { if (canvas) { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; } }
-    async function fetchLeaderboard() { try { const r = await fetch('/get-leaderboard'); const d = await r.json(); updateLeaderboardUI(d); } catch (e) { console.error('Erro ao buscar placar:', e); } }
-    function updateLeaderboardUI(d) { leaderboardList.innerHTML = ''; if (d.length === 0) { leaderboardList.innerHTML = '<li>Nenhum pistoleiro no placar ainda!</li>'; return; } d.forEach((p, i) => { const li = document.createElement('li'); li.innerHTML = `${i+1}. ${p.name} <span class="score">${p.score}$</span>`; leaderboardList.appendChild(li); }); }
-    async function submitScore(name, score) { try { await fetch('/submit-score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, score: score }) }); } catch (e) { console.error('Erro ao enviar pontuação:', e); } }
+    
+    // --- LÓGICA DE PLACAR ATUALIZADA ---
+    async function fetchLeaderboards() {
+        try {
+            const [classicRes, survivalRes] = await Promise.all([
+                fetch('/get-leaderboard-classic'),
+                fetch('/get-leaderboard-survival')
+            ]);
+            const classicData = await classicRes.json();
+            const survivalData = await survivalRes.json();
+            updateLeaderboardUI(classicData, 'classic');
+            updateLeaderboardUI(survivalData, 'survival');
+        } catch (e) {
+            console.error('Erro ao buscar placares:', e);
+        }
+    }
+
+    function updateLeaderboardUI(data, mode) {
+        const list = (mode === 'classic') ? leaderboardClassicList : leaderboardSurvivalList;
+        list.innerHTML = '';
+        if (data.length === 0) {
+            list.innerHTML = '<li>Nenhum registro ainda!</li>';
+            return;
+        }
+        data.forEach((p, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `${i+1}. ${p.name} <span class="score">${p.score}$</span>`;
+            list.appendChild(li);
+        });
+    }
+
+    async function submitScore(name, score, mode) {
+        try {
+            await fetch('/submit-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, score: score, mode: mode }) // Envia o modo
+            });
+        } catch (e) {
+            console.error('Erro ao enviar pontuação:', e);
+        }
+    }
 
     // --- INICIALIZAÇÃO E EVENTOS ---
     showMenu();
-    fetchLeaderboard();
+    fetchLeaderboards(); // Busca os dois placares ao iniciar
     resizeCanvas();
     
-    // CORREÇÃO: Adiciona o listener APENAS para os botões que têm o atributo 'data-mode'
     document.querySelectorAll('.mode-button[data-mode]').forEach(b => {
         b.addEventListener('click', () => setupGame(b.dataset.mode));
     });
 
-    // Listeners para os outros botões
     startGameButton.addEventListener('click', runGame);
     canvas.addEventListener('click', handleCanvasClick);
     window.addEventListener('resize', resizeCanvas);
     backToMenuButton.addEventListener('click', showMenu);
     
-    // Eventos do Modal de Regras
-    rulesButton.addEventListener('click', () => {
-        rulesModal.style.display = 'flex';
-    });
-
-    closeRulesButton.addEventListener('click', () => {
-        rulesModal.style.display = 'none';
-    });
-
-    // Fecha o modal se o usuário clicar fora da área de conteúdo
-    window.addEventListener('click', (event) => {
-        if (event.target == rulesModal) {
-            rulesModal.style.display = 'none';
-        }
-    });
+    rulesButton.addEventListener('click', () => { rulesModal.style.display = 'flex'; });
+    closeRulesButton.addEventListener('click', () => { rulesModal.style.display = 'none'; });
+    window.addEventListener('click', (event) => { if (event.target == rulesModal) rulesModal.style.display = 'none'; });
     
     playAgainButton.addEventListener('click', () => {
         gameOverModal.style.display = 'none';
@@ -343,8 +371,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     submitScoreButton.addEventListener('click', async () => {
         const name = playerNameInput.value || 'Anônimo';
-        await submitScore(name, gameState.score);
-        await fetchLeaderboard();
+        await submitScore(name, gameState.score, gameState.mode); // Envia o modo
+        await fetchLeaderboards(); // Atualiza os dois placares
         playerNameInput.value = '';
         gameOverModal.style.display = 'none';
         showMenu();

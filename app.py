@@ -12,8 +12,18 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
+    # Tabela para o placar do Modo Clássico
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS leaderboard (
+        CREATE TABLE IF NOT EXISTS leaderboard_classic (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            score INTEGER NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    # NOVA Tabela para o placar do Modo Sobrevivência
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS leaderboard_survival (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             score INTEGER NOT NULL,
@@ -29,52 +39,55 @@ def init_db():
 def index():
     return render_template('index.html')
 
-# --- ESTA É A ROTA QUE MUDOU ---
+# Rota para submeter pontuação (agora lida com os dois modos)
 @app.route('/submit-score', methods=['POST'])
 def submit_score():
     data = request.get_json()
     name = data.get('name')
     new_score = data.get('score')
+    mode = data.get('mode') # 'classico' ou 'sobrevivencia'
 
-    if not name or new_score is None:
-        return jsonify({'status': 'error', 'message': 'Nome ou pontuação faltando'}), 400
+    if not name or new_score is None or not mode:
+        return jsonify({'status': 'error', 'message': 'Dados incompletos'}), 400
+
+    # Define qual tabela usar com base no modo
+    table_name = 'leaderboard_classic' if mode == 'classico' else 'leaderboard_survival'
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # 1. VERIFICA SE O JOGADOR JÁ EXISTE
-    cursor.execute("SELECT * FROM leaderboard WHERE name = ?", (name,))
+    # Verifica se o jogador já existe na tabela correta
+    cursor.execute(f"SELECT * FROM {table_name} WHERE name = ?", (name,))
     existing_player = cursor.fetchone()
 
-    # 2. DECIDE SE INSERE UM NOVO JOGADOR OU ATUALIZA O PLACAR
     if existing_player is None:
-        # Jogador é novo, insere o placar normalmente
-        print(f"\nJogador novo '{name}' encontrado. Inserindo pontuação: {new_score}\n")
-        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (?, ?)", (name, new_score))
+        # Jogador novo, insere o placar
+        cursor.execute(f"INSERT INTO {table_name} (name, score) VALUES (?, ?)", (name, new_score))
     else:
-        # Jogador já existe, compara a pontuação
-        existing_score = existing_player['score']
-        print(f"\nJogador '{name}' já existe com pontuação {existing_score}. Nova pontuação: {new_score}")
-        
-        if new_score > existing_score:
-            # Nova pontuação é maior, atualiza o placar
-            print(f"Nova pontuação é MAIOR. Atualizando o placar de '{name}'.\n")
-            cursor.execute("UPDATE leaderboard SET score = ? WHERE name = ?", (new_score, name))
-        else:
-            # Nova pontuação não é maior, não faz nada
-            print(f"Nova pontuação NÃO é maior. Nenhuma alteração necessária.\n")
+        # Jogador já existe, atualiza se a nova pontuação for maior
+        if new_score > existing_player['score']:
+            cursor.execute(f"UPDATE {table_name} SET score = ? WHERE name = ?", (new_score, name))
 
     conn.commit()
     conn.close()
     
-    return jsonify({'status': 'success', 'message': 'Operação concluída com sucesso!'})
+    return jsonify({'status': 'success', 'message': 'Operação concluída!'})
 
 
-@app.route('/get-leaderboard')
-def get_leaderboard():
-    # Esta rota continua igual
+# Rota para buscar o placar do Modo Clássico
+@app.route('/get-leaderboard-classic')
+def get_leaderboard_classic():
     conn = get_db_connection()
-    cursor = conn.execute('SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10')
+    cursor = conn.execute('SELECT name, score FROM leaderboard_classic ORDER BY score DESC LIMIT 10')
+    leaderboard = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(leaderboard)
+
+# NOVA Rota para buscar o placar do Modo Sobrevivência
+@app.route('/get-leaderboard-survival')
+def get_leaderboard_survival():
+    conn = get_db_connection()
+    cursor = conn.execute('SELECT name, score FROM leaderboard_survival ORDER BY score DESC LIMIT 10')
     leaderboard = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return jsonify(leaderboard)

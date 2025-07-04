@@ -1,50 +1,82 @@
-# Resumo do Jogo: Duelo no Velho Oeste
+# Duelo no Velho Oeste
 
-"Duelo no Velho Oeste" é um jogo de arcade e reação totalmente funcional, projetado para rodar em navegadores de desktop e celular. O objetivo principal é testar os reflexos e a estratégia do jogador ao clicar em alvos que aparecem na tela, com regras e desafios que mudam drasticamente dependendo do modo de jogo escolhido.
+Bem-vindo ao "Duelo no Velho Oeste", um jogo de arcade e reação para navegador onde sua velocidade e estratégia são postas à prova! Desafie seus reflexos em diferentes modos de jogo, suba nos placares online e torne-se o pistoleiro mais rápido do oeste.
 
-## Tecnologia e Arquitetura
+![Imagem do Jogo](https://i.imgur.com/your-image-url.png) 
+*Substitua pelo URL de uma imagem do seu jogo, se desejar.*
 
-O jogo foi construído com uma stack de desenvolvimento web completa:
+---
 
-- **Back-end:** Utiliza Python com o micro-framework Flask para gerenciar o servidor e as requisições.
-- **Banco de Dados:** Emprega SQLite para armazenar de forma persistente o placar global dos "Top Pistoleiros".
-- **Front-end:** A interface e toda a interatividade são construídas com HTML, CSS e JavaScript puro, garantindo uma experiência rápida e responsiva.
+## 🚀 Como Jogar
 
-## Modos de Jogo
+Para rodar o jogo em sua máquina local, siga estes passos:
 
-Você projetou três modos de jogo distintos, cada um com um desafio único:
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
+    cd seu-repositorio
+    ```
+
+2.  **Instale as dependências:**
+    O jogo utiliza Flask para o backend. Certifique-se de ter o Python instalado e execute:
+    ```bash
+    pip install Flask
+    ```
+
+3.  **Execute o servidor:**
+    ```bash
+    python app.py
+    ```
+
+4.  **Abra no navegador:**
+    Acesse `http://127.0.0.1:5000` no seu navegador preferido e comece a jogar!
+
+---
+
+## 🛠️ Tecnologia Utilizada
+
+* **Backend:** **Python** com o micro-framework **Flask**, responsável por servir a aplicação e gerenciar a API do placar.
+* **Banco de Dados:** **SQLite** para armazenar de forma persistente os placares dos jogadores.
+* **Frontend:** **HTML**, **CSS** e **JavaScript** puro, garantindo uma experiência de jogo rápida, responsiva e sem a necessidade de frameworks complexos.
+
+---
+
+## 🤠 Modos de Jogo
+
+O jogo oferece três modos distintos, cada um com um desafio único:
 
 ### Modo Clássico
-
-- **Objetivo:** Marcar a maior pontuação possível em 10 segundos.
-- **Recursos:** Conta com power-ups como o Relógio (⏱️) para adicionar tempo extra e o Multiplicador (💰) para dobrar os pontos.
-- **Competitivo:** Este é o único modo onde a pontuação pode ser salva no placar global online, incentivando a competição.
+* **Objetivo:** Marcar a maior pontuação possível em **10 segundos**.
+* **Recursos:** Conta com power-ups de tempo (⏱️) e multiplicadores de pontos (💰).
+* **Competitivo:** Apenas neste modo sua pontuação é salva no placar "Top Pistoleiros".
 
 ### Modo Sobrevivência
-
-- **Objetivo:** Sobreviver o máximo possível e alcançar a maior pontuação.
-- **Recursos:** O jogador começa com 3 vidas (❤️❤️❤️). O jogo só termina quando as vidas acabam.
-- **Desafios:** A tela fica cheia de alvos e perigos. Clicar em uma Caveira (💀) resulta na perda de uma vida, exigindo precisão e cuidado.
+* **Objetivo:** Sobreviver o máximo possível e alcançar a maior pontuação.
+* **Recursos:** Você começa com **3 vidas** (❤️❤️❤️). O jogo termina quando suas vidas acabam.
+* **Desafio Extra:** Após atingir **100 pontos**, a dificuldade aumenta! Caveiras (💀) e Bombas (💣) aparecem com mais frequência e quase sempre juntas.
 
 ### Modo Precisão
+* **Objetivo:** Maximizar a pontuação com um número limitado de cliques.
+* **Recursos:** Você tem apenas **15 "balas"**. Cada clique conta! Pense bem antes de atirar.
 
-- **Objetivo:** Maximizar a pontuação com um número limitado de cliques.
-- **Recursos:** O jogador tem apenas 15 "balas".
-- **Estratégia:** Cada clique conta. O jogador precisa decidir se vale a pena gastar uma bala em um alvo de baixa pontuação ou esperar por um melhor.
+---
 
-## Alvos e Power-Ups (Entidades do Jogo)
+## 🎯 Itens e Power-Ups
 
-A jogabilidade é enriquecida por uma variedade de itens que aparecem na tela:
+* ⭐ **Estrela Normal:** O alvo padrão, vale **1 ponto**.
+* 🌟 **Estrela Dourada:** Um alvo raro e rápido que vale **5 pontos**.
+* 💀 **Caveira:** Um perigo! No Modo Sobrevivência, clicar nela custa **uma vida**.
+* 💣 **Bomba:** Exclusiva do Modo Sobrevivência. Ao ser clicada, destrói todos os alvos na tela. **CUIDADO:** se houver uma caveira, a explosão também a ativará e você perderá uma vida!
+* ⏱️ **Relógio:** Power-up do Modo Clássico que adiciona **3 segundos** ao tempo.
+* 💰 **Multiplicador de Pontos:** Dobra o valor dos pontos ganhos temporariamente. É cumulativo (2x, 4x, 8x...).
 
-- **Estrela Normal (⭐):** O alvo padrão, vale 1 ponto. Aparece um de cada vez para focar a ação.
-- **Estrela Dourada (🌟):** Um alvo mais raro e rápido que vale 5 pontos.
-- **Caveira (💀):** Um perigo! No Modo Sobrevivência, clicar nela custa uma vida.
-- **Relógio (⏱️):** Power-up do Modo Clássico que adiciona 3 segundos ao tempo.
-- **Multiplicador de Pontos (💰):** Power-up que dobra o valor dos pontos ganhos. É cumulativo, podendo chegar a 4x, 8x, etc., adicionando uma camada de alta recompensa.
-- **Bomba (💣):** Power-up do Modo Sobrevivência que, ao ser clicado, destrói todos os alvos e caveiras na tela, exigindo um clique estratégico.
+---
 
-## Recursos e Experiência do Usuário
+## ✨ Recursos Principais
 
-- **Placar Global:** O sistema de "Top Pistoleiros" é totalmente funcional, com o servidor salvando e atualizando a melhor pontuação de cada jogador.
-- **Design Responsivo:** A interface se adapta para uma boa experiência tanto em telas grandes de computador quanto em celulares.
-- **Fluxo de Jogo Completo:** Possui um menu principal claro para seleção de modo, uma tela de jogo que se adapta a cada modo, e um modal de fim de partida bem estruturado, com opções para jogar novamente ou registrar a pontuação.
+* **Placares Separados:** O jogo conta com dois placares online: "Top Pistoleiros" para o Modo Clássico e "Top Sobreviventes" para o Modo Sobrevivência.
+* **Design Responsivo:** A interface se adapta para uma ótima experiência tanto em telas grandes de computador quanto em celulares.
+* **Menu de Regras:** Uma seção dedicada no menu principal explica todas as mecânicas, itens e modos de jogo.
+* **Fluxo Completo:** Menu principal, tela de jogo adaptável e um modal de fim de partida bem estruturado com opções para jogar novamente ou registrar a pontuação.
+
+---
