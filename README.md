@@ -13,7 +13,7 @@ Para rodar o jogo em sua máquina local, siga estes passos:
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
+    git clone https://github.com/CarlosNatanael/meu_jogo_flask.git
     cd seu-repositorio
     ```
 
