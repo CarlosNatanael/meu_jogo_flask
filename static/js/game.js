@@ -1,3 +1,5 @@
+// static/js/game.js (VERSÃO FINAL E CORRIGIDA)
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
@@ -8,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const leaderboardSection = document.getElementById('leaderboard-section');
     const leaderboardList = document.getElementById('leaderboard-list');
     const ctx = canvas.getContext('2d');
+    
+    // Botões
+    const startGameButton = document.getElementById('start-game-button');
+    const backToMenuButton = document.getElementById('back-to-menu-button');
+    
+    // Modal
     const gameOverModal = document.getElementById('game-over-modal');
     const finalScoreModal = document.getElementById('final-score-modal');
     const modalTitle = document.getElementById('modal-title');
@@ -17,23 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerNameInput = document.getElementById('player-name-input');
     const submitScoreButton = document.getElementById('submit-score-button');
     const playAgainButton = document.getElementById('play-again-button');
-    const backToMenuButton = document.getElementById('back-to-menu-button');
 
     // --- ESTADO GLOBAL DO JOGO ---
-    let gameState = {
-        mode: null,
-        score: 0,
-        isGameOver: true,
-        timeLeft: 0,
-        lives: 0,
-        bullets: 0,
-        scoreMultiplier: 1,
-        multiplierTimeLeft: 0,
-    };
-
+    let gameState = {};
     let gameLoopId = null;
     const sprites = {};
-    let activeEntities = []; // Guarda todos os alvos, power-ups e animações
+    let activeEntities = [];
 
     // --- CARREGAMENTO DE SPRITES ---
     function loadSprites(sources, callback) {
@@ -46,142 +43,142 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LÓGICA DE UI (INTERFACE DO USUÁRIO) ---
+    // --- LÓGICA DE UI (INTERFACE) ---
     function showMenu() {
         mainMenu.style.display = 'block';
         gameSection.style.display = 'none';
-        leaderboardSection.style.display = 'none';
-        gameState.isGameOver = true;
+        leaderboardSection.style.display = 'block';
+        if(gameState) gameState.isGameOver = true;
         cancelAnimationFrame(gameLoopId);
     }
 
     function updateGameInfo() {
         let infoHTML = `<span>Pontos: <span id="score">${gameState.score}</span></span>`;
         if (gameState.mode === 'classico') {
-            infoHTML += `<span>Tempo: <span id="timer">${gameState.timeLeft}</span>s</span>`;
+            infoHTML += `<span style="margin-left:20px;">Tempo: <span id="timer">${gameState.timeLeft}</span>s</span>`;
         } else if (gameState.mode === 'sobrevivencia') {
-            infoHTML += `<span>Vidas: <span id="lives">${'❤️'.repeat(gameState.lives)}</span></span>`;
+            infoHTML += `<span style="margin-left:20px;">Vidas: <span id="lives">${'❤️'.repeat(gameState.lives)}</span></span>`;
         } else if (gameState.mode === 'precisao') {
-            infoHTML += `<span>Balas: <span id="bullets">${gameState.bullets}</span></span>`;
+            infoHTML += `<span style="margin-left:20px;">Balas: <span id="bullets">${gameState.bullets}</span></span>`;
         }
         if (gameState.scoreMultiplier > 1) {
-            infoHTML += `<span>Score: 2x!</span>`;
+            infoHTML += `<span style="margin-left:20px; color: gold;">Score ${gameState.scoreMultiplier}x!</span>`;
         }
         gameInfo.innerHTML = infoHTML;
     }
 
     // --- LÓGICA PRINCIPAL DO JOGO ---
-    function startGame(mode) {
+    function setupGame(mode) {
         mainMenu.style.display = 'none';
         gameSection.style.display = 'flex';
-        gameState.isGameOver = false;
-        gameState.mode = mode;
-        gameState.score = 0;
-        gameState.scoreMultiplier = 1;
-        activeEntities = [];
+        leaderboardSection.style.display = (mode === 'classico');
+        startGameButton.style.display = 'block';
 
-        if (mode === 'classico') {
-            gameState.timeLeft = 10;
-            leaderboardSection.style.display = 'block';
-        } else if (mode === 'sobrevivencia') {
-            gameState.lives = 3;
-            leaderboardSection.style.display = 'none';
-        } else if (mode === 'precisao') {
-            gameState.bullets = 15;
-            leaderboardSection.style.display = 'none';
-        }
+        gameState = {
+            mode: mode, score: 0, isGameOver: true, timeLeft: 0, lives: 0, bullets: 0,
+            scoreMultiplier: 1, multiplierTimeLeft: 0,
+        };
+        activeEntities = [];
+        
+        // CORREÇÃO: Redimensiona o canvas DEPOIS que ele fica visível
+        resizeCanvas();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (mode === 'classico') gameState.timeLeft = 10;
+        else if (mode === 'sobrevivencia') gameState.lives = 3;
+        else if (mode === 'precisao') gameState.bullets = 15;
         
         updateGameInfo();
-        gameLoop(); // Inicia o loop de jogo
     }
 
+    function runGame() {
+        if (!gameState.isGameOver) return;
+        gameState.isGameOver = false;
+        startGameButton.style.display = 'none';
+        lastTime = performance.now();
+        
+        // Começa com uma estrela
+        spawnEntity('target_normal'); 
+        
+        gameLoop();
+    }
+    
     let lastTime = 0;
-    let spawnCounter = 0;
     let secondCounter = 0;
+    let randomSpawnCounter = 0;
 
     function gameLoop(timestamp) {
         if (gameState.isGameOver) return;
-
-        const deltaTime = (timestamp - lastTime) / 1000; // Tempo em segundos desde o último frame
+        gameLoopId = requestAnimationFrame(gameLoop);
+        if (!timestamp) { lastTime = performance.now(); return; }
+        const deltaTime = (timestamp - lastTime) / 1000;
         lastTime = timestamp;
 
-        // --- ATUALIZAÇÃO DE 1 SEGUNDO ---
+        // --- LÓGICA DE 1 SEGUNDO (CORRIGIDA) ---
         secondCounter += deltaTime;
         if (secondCounter >= 1) {
             secondCounter -= 1;
-            
-            // Lógica que acontece a cada segundo
             if (gameState.mode === 'classico') {
                 gameState.timeLeft--;
-                if (gameState.timeLeft <= 0) endGame("O tempo acabou!");
+                if (gameState.timeLeft < 0) gameState.timeLeft = 0;
+                if (gameState.timeLeft === 0) endGame("O tempo acabou!");
             }
             if (gameState.scoreMultiplier > 1) {
                 gameState.multiplierTimeLeft--;
                 if (gameState.multiplierTimeLeft <= 0) gameState.scoreMultiplier = 1;
             }
-            updateGameInfo();
+            updateGameInfo(); // Atualiza a UI a cada segundo
         }
 
-        // --- LÓGICA DE SPAWN ---
-        spawnCounter += deltaTime;
-        if (spawnCounter >= 1.2) { // Tenta criar algo a cada 1.2 segundos
-            spawnCounter = 0;
+        // --- LÓGICA DE SPAWN ALEATÓRIO ---
+        randomSpawnCounter += deltaTime;
+        if (randomSpawnCounter >= 2.5) {
+            randomSpawnCounter = 0;
+            const rand = Math.random();
             if (gameState.mode === 'classico') {
-                if (Math.random() < 0.7) spawnEntity('target_normal');
-                if (Math.random() < 0.15) spawnEntity('powerup_clock');
-                if (Math.random() < 0.1) spawnEntity('powerup_2x');
+                if (rand < 0.4) spawnEntity('powerup_clock');
+                else if (rand < 0.7) spawnEntity('powerup_2x');
             } else if (gameState.mode === 'sobrevivencia') {
-                const rand = Math.random();
-                if (rand < 0.6) spawnEntity('target_mobile');
-                else if (rand < 0.7) spawnEntity('target_gold');
-                else if (rand < 0.8) spawnEntity('target_skull');
-                else if (rand < 0.85) spawnEntity('powerup_bomb');
-                else if (rand < 0.9) spawnEntity('powerup_2x');
-            } else if (gameState.mode === 'precisao') {
-                spawnEntity('target_normal');
+                if (rand < 0.3) spawnEntity('powerup_bomb');
+                else if (rand < 0.6) spawnEntity('powerup_2x');
+                else spawnEntity('target_skull');
             }
         }
         
-        // --- ATUALIZAÇÃO DE ENTIDADES ---
+        // --- DESENHO E ATUALIZAÇÃO DE ENTIDADES ---
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let i = activeEntities.length - 1; i >= 0; i--) {
             const entity = activeEntities[i];
             
-            // Atualiza a posição (para alvos móveis)
-            if (entity.vx) entity.x += entity.vx * deltaTime;
-            if (entity.vy) entity.y += entity.vy * deltaTime;
-
-            // Remove entidades que saem da tela
-            if (entity.x < -entity.width || entity.x > canvas.width || entity.y < -entity.height || entity.y > canvas.height) {
-                if (gameState.mode === 'sobrevivencia' && entity.type.includes('target')) {
-                    gameState.lives--;
-                    updateGameInfo();
-                    if (gameState.lives <= 0) endGame("Você ficou sem vidas!");
-                }
+            if (entity.life > 0) {
+                entity.life -= deltaTime;
+                ctx.globalAlpha = Math.min(1, entity.life / 0.3);
+            } else { 
                 activeEntities.splice(i, 1);
                 continue;
             }
-
-            // Animação de "fade out"
-            if (entity.life > 0) {
-                entity.life -= deltaTime;
-                ctx.globalAlpha = entity.life / entity.initialLife;
-            } else if(entity.type.includes('effect')) {
-                activeEntities.splice(i, 1); // Remove animação quando acaba
-            }
-            
-            ctx.drawImage(entity.img, entity.x, entity.y, entity.width, entity.height);
-            ctx.globalAlpha = 1.0; // Reseta a transparência
+            ctx.font = `${entity.size}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(entity.character, entity.x, entity.y);
+            ctx.globalAlpha = 1.0;
         }
-        
-        gameLoopId = requestAnimationFrame(gameLoop);
+
+        // --- LÓGICA DE SPAWN DE ESTRELAS (UM DE CADA VEZ) ---
+        const targetCount = activeEntities.filter(e => e.type.includes('target') && e.type !== 'target_skull').length;
+        if (targetCount === 0) {
+            if (gameState.mode === 'precisao' && gameState.bullets > 0) {
+                spawnEntity('target_normal');
+            } else if (gameState.mode !== 'precisao') {
+                spawnEntity('target_normal');
+            }
+        }
     }
 
     function endGame(reason) {
         if (gameState.isGameOver) return;
         gameState.isGameOver = true;
         cancelAnimationFrame(gameLoopId);
-
         modalTitle.textContent = "Duelo Encerrado!";
         modalText.innerHTML = `Sua recompensa final foi de <strong>${gameState.score}</strong>$.<br><em>(${reason})</em>`;
         finalScoreModal.textContent = gameState.score;
@@ -190,35 +187,20 @@ document.addEventListener('DOMContentLoaded', () => {
         gameOverModal.style.display = 'flex';
     }
     
-    // --- LÓGICA DE ENTIDADES E CLIQUE ---
     function spawnEntity(type) {
-        const entity = { type: type, x: 0, y: 0, width: 50, height: 50, life: 10, initialLife: 10 };
-        
-        // Propriedades por tipo
-        if (type === 'target_normal') { entity.img = sprites.target_normal; }
-        else if (type === 'target_gold') { entity.img = sprites.target_gold; entity.width = 40; entity.height = 40; entity.life = 2; entity.initialLife = 2; }
-        else if (type === 'target_skull') { entity.img = sprites.target_skull; }
-        else if (type === 'target_mobile') { 
-            entity.img = sprites.target_normal;
-            entity.x = Math.random() < 0.5 ? -50 : canvas.width + 50;
-            entity.y = Math.random() * canvas.height;
-            entity.vx = entity.x < 0 ? 50 + Math.random() * 50 : -50 - Math.random() * 50; // Velocidade em pixels/seg
-            entity.vy = Math.random() * 60 - 30;
-        }
-        else if (type === 'powerup_clock') { entity.img = sprites.powerup_clock; entity.width = 40; entity.height = 40; }
-        else if (type === 'powerup_2x') { entity.img = sprites.powerup_2x; entity.width = 40; entity.height = 40; }
-        else if (type === 'powerup_bomb') { entity.img = sprites.powerup_bomb; entity.width = 40; entity.height = 40; }
-        else if (type === 'effect_hit') { 
-            entity.img = sprites.hit_effect; 
-            entity.width = 60; entity.height = 60; 
-            entity.life = 0.3; entity.initialLife = 0.3; // Animação curta
-        }
-
-        if (type !== 'target_mobile' && type !== 'effect_hit') {
-            entity.x = Math.random() * (canvas.width - entity.width);
-            entity.y = Math.random() * (canvas.height - entity.height);
-        }
-
+        if (activeEntities.length > 7) return;
+        const entity = { type: type, x: 0, y: 0, size: 40, life: 3.0, initialLife: 3.0, character: '❓' };
+        const configs = {
+            'target_normal': { character: '⭐', life: 1.8 },
+            'target_gold': { character: '🌟', size: 35, life: 1.2 },
+            'target_skull': { character: '💀', life: 2.5 },
+            'powerup_clock': { character: '⏱️', size: 35, life: 4.0 },
+            'powerup_2x': { character: '💰', size: 35, life: 4.0 },
+            'powerup_bomb': { character: '💣', size: 35, life: 4.0 },
+        };
+        Object.assign(entity, configs[type]);
+        entity.x = entity.size / 2 + Math.random() * (canvas.width - entity.size);
+        entity.y = entity.size / 2 + Math.random() * (canvas.height - entity.size);
         activeEntities.push(entity);
     }
 
@@ -228,131 +210,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
 
-        let hit = false;
-        if(gameState.mode === 'precisao') {
+        if (gameState.mode === 'precisao') {
+            if (gameState.bullets <= 0) return;
             gameState.bullets--;
-            if(gameState.bullets < 0) {
-                endGame("Você ficou sem balas!");
-                return;
-            }
         }
-        
+
         for (let i = activeEntities.length - 1; i >= 0; i--) {
             const entity = activeEntities[i];
-            if (entity.type.includes('effect')) continue;
+            const distance = Math.sqrt(Math.pow(clickX - entity.x, 2) + Math.pow(clickY - entity.y, 2));
 
-            if (clickX >= entity.x && clickX <= entity.x + entity.width && clickY >= entity.y && clickY <= entity.y + entity.height) {
-                hit = true;
-                const hitX = entity.x; const hitY = entity.y;
-                
-                // Lógica de acerto por tipo
-                if (entity.type === 'target_normal' || entity.type === 'target_mobile') gameState.score += 1 * gameState.scoreMultiplier;
-                else if (entity.type === 'target_gold') gameState.score += 5 * gameState.scoreMultiplier;
-                else if (entity.type === 'target_skull') {
-                    if(gameState.mode === 'sobrevivencia') gameState.lives--;
-                    if(gameState.lives <= 0) endGame("Cuidado onde atira, pistoleiro!");
-                }
-                else if (entity.type === 'powerup_clock') gameState.timeLeft += 3;
-                else if (entity.type === 'powerup_2x') { gameState.scoreMultiplier = 2; gameState.multiplierTimeLeft = 5; }
-                else if (entity.type === 'powerup_bomb') {
-                    for(let j = activeEntities.length - 1; j >= 0; j--) {
-                        if(activeEntities[j].type.includes('target')) {
-                            gameState.score += 1 * gameState.scoreMultiplier;
-                            activeEntities.splice(j, 1);
+            if (distance < entity.size / 2) {
+                if (entity.type === 'target_skull') {
+                    if (gameState.mode === 'sobrevivencia') {
+                        gameState.lives--;
+                        if (gameState.lives <= 0) endGame("Cuidado onde atira, pistoleiro!");
+                    }
+                } 
+                else if (entity.type.includes('target')) {
+                    const points = (entity.type === 'target_gold') ? 5 : 1;
+                    gameState.score += points * gameState.scoreMultiplier;
+                } 
+                else if (entity.type.includes('powerup')) {
+                    if (entity.type === 'powerup_clock' && gameState.mode === 'classico') {
+                        gameState.timeLeft += 3;
+                    } else if (entity.type === 'powerup_2x') { 
+                        gameState.scoreMultiplier = (gameState.scoreMultiplier === 1) ? 2 : gameState.scoreMultiplier * 2;
+                        gameState.multiplierTimeLeft += 5;
+                    } 
+                    else if (entity.type === 'powerup_bomb' && gameState.mode === 'sobrevivencia') {
+                        for (let j = activeEntities.length - 1; j >= 0; j--) {
+                            if (activeEntities[j].type.includes('target')) {
+                                gameState.score++;
+                                activeEntities.splice(j, 1);
+                            }
                         }
                     }
                 }
-                
-                if(!entity.type.includes('powerup')) {
-                    const hitEffect = {type: 'effect_hit', img: sprites.hit_effect, x: hitX, y: hitY, width: 60, height: 60, life: 0.3, initialLife: 0.3};
-                    activeEntities.push(hitEffect);
-                }
                 activeEntities.splice(i, 1);
-                break; // Registra apenas um acerto por clique
+                updateGameInfo();
+                if (gameState.mode === 'precisao' && gameState.bullets <= 0) endGame("Você ficou sem balas!");
+                return;
             }
         }
-
-        if(!hit && gameState.mode === 'sobrevivencia') {
-            gameState.lives--;
-            if(gameState.lives <= 0) endGame("Mira melhor da próxima vez!");
-        }
-        
         updateGameInfo();
     }
     
     function resizeCanvas() { if (canvas) { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; } }
+    async function fetchLeaderboard() { try { const r = await fetch('/get-leaderboard'); const d = await r.json(); updateLeaderboardUI(d); } catch (e) { console.error('Erro ao buscar placar:', e); } }
+    function updateLeaderboardUI(d) { leaderboardList.innerHTML = ''; if (d.length === 0) { leaderboardList.innerHTML = '<li>Nenhum pistoleiro no placar ainda!</li>'; return; } d.forEach((p, i) => { const li = document.createElement('li'); li.innerHTML = `${i+1}. ${p.name} <span class="score">${p.score}$</span>`; leaderboardList.appendChild(li); }); }
+    async function submitScore(name, score) { try { await fetch('/submit-score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, score: score }) }); } catch (e) { console.error('Erro ao enviar pontuação:', e); } }
 
-async function fetchLeaderboard() {
-    try {
-        const response = await fetch('/get-leaderboard');
-        const data = await response.json();
-        updateLeaderboardUI(data);
-    } catch (error) {
-        console.error('Erro ao buscar o placar:', error);
-    }
-}
-
-function updateLeaderboardUI(leaderboard) {
-    leaderboardList.innerHTML = '';
-    if (leaderboard.length === 0) {
-        leaderboardList.innerHTML = '<li>Nenhum pistoleiro no placar ainda!</li>';
-        return;
-    }
-    leaderboard.forEach((player, index) => {
-        const li = document.createElement('li');
-        li.innerHTML = `${index + 1}. ${player.name} <span class="score">${player.score}$</span>`;
-        leaderboardList.appendChild(li);
-    });
-}
-
-async function submitScore(playerName, finalScore) {
-    try {
-        await fetch('/submit-score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: playerName, score: finalScore })
-        });
-    } catch (error) {
-        console.error('Erro ao enviar a pontuação:', error);
-    }
-}
-
-    const sources = {
-        target_normal: '/static/img/target_normal.png',
-        target_gold: '/static/img/target_gold.png',
-        target_skull: '/static/img/target_skull.png',
-        powerup_clock: '/static/img/powerup_clock.png',
-        powerup_2x: '/static/img/powerup_2x.png',
-        powerup_bomb: '/static/img/powerup_bomb.png',
-        hit_effect: '/static/img/hit_effect.png'
-    };
-    
-    loadSprites(sources, () => {
+    // --- INICIALIZAÇÃO E EVENTOS ---
+    showMenu();
+    fetchLeaderboard();
+    resizeCanvas();
+    document.querySelectorAll('.mode-button').forEach(b => b.addEventListener('click', () => setupGame(b.dataset.mode)));
+    startGameButton.addEventListener('click', runGame);
+    canvas.addEventListener('click', handleCanvasClick);
+    window.addEventListener('resize', resizeCanvas);
+    backToMenuButton.addEventListener('click', showMenu);
+    playAgainButton.addEventListener('click', () => { gameOverModal.style.display = 'none'; setupGame(gameState.mode); });
+    showRegisterFormButton.addEventListener('click', () => { registerForm.style.display = 'block'; });
+    submitScoreButton.addEventListener('click', async () => {
+        const name = playerNameInput.value || 'Anônimo';
+        await submitScore(name, gameState.score);
+        await fetchLeaderboard();
+        playerNameInput.value = '';
+        gameOverModal.style.display = 'none';
         showMenu();
-        fetchLeaderboard();
-        resizeCanvas();
-
-        document.querySelectorAll('.mode-button').forEach(button => {
-            button.addEventListener('click', () => startGame(button.dataset.mode));
-        });
-
-        canvas.addEventListener('click', handleCanvasClick);
-        window.addEventListener('resize', resizeCanvas);
-        backToMenuButton.addEventListener('click', showMenu);
-        playAgainButton.addEventListener('click', () => {
-            gameOverModal.style.display = 'none';
-            startGame(gameState.mode);
-        });
-        showRegisterFormButton.addEventListener('click', () => {
-            registerForm.style.display = 'block';
-        });
-        submitScoreButton.addEventListener('click', async () => {
-            const playerName = playerNameInput.value || 'Anônimo';
-            await submitScore(playerName, gameState.score);
-            await fetchLeaderboard();
-            playerNameInput.value = '';
-            gameOverModal.style.display = 'none';
-            showMenu();
-        });
     });
 });

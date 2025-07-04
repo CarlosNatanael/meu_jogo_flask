@@ -51,21 +51,6 @@ body {
     gap: 15px;
 }
 
-.mode-button {
-    padding: 15px 30px;
-    font-family: 'Rye', cursive;
-    font-size: 1.2em;
-    cursor: pointer;
-    color: white;
-    background-color: #cd853f;
-    border: 2px solid #8b4513;
-    border-radius: 5px;
-}
-
-.mode-button:hover {
-    background-color: #d2b48c;
-}
-
 /* --- ESTILOS DA SEÇÃO DO JOGO --- */
 #game-section, #leaderboard-section {
     background-color: rgba(0, 0, 0, 0.6);
@@ -200,6 +185,19 @@ button {
     }
 }
 
-.mode-button:hover, #back-to-menu-button:hover {
+/* Aplica o estilo base a todos os nossos botões de ação */
+.mode-button, #start-game-button, #back-to-menu-button {
+    padding: 15px 30px;
+    font-family: 'Rye', cursive;
+    font-size: 1.2em;
+    cursor: pointer;
+    color: white;
+    background-color: #cd853f;
+    border: 2px solid #8b4513;
+    border-radius: 5px;
+}
+
+/* Aplica o efeito hover a todos eles */
+.mode-button:hover, #start-game-button:hover, #back-to-menu-button:hover {
     background-color: #d2b48c;
 }
